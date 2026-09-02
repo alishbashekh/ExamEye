@@ -1,11 +1,14 @@
-import React from 'react'
+import { useEffect , useState } from "react";
+import axios from "axios";
 
-function App() {
-  return (
-    <div>
-      <h1 className="text-3xl font-bold underline text-red-300">hello world</h1>
-    </div>
-  )
+function App(){
+  const [message, SetMessage]= useState("");
+  
+  useEffect(()=>{
+    axios.get("http://localhost:5000/api/test")
+    .then((res)=> SetMessage(res.data.message))
+    .catch((err)=> console.error("frontend-backend connnecction failed",err));
+  },[]);
+  return <h1>{message || "connecting..."}</h1>
 }
-
-export default App
+export default App;
