@@ -9,6 +9,8 @@ import { connectPostgres } from "./config/postgre.js"
 import reportRoutes from "./routes/reportRoutes.js"
 import { syncSqlDatabase } from "./models/sql/index.js";
 import authRoutes from "./routes/authRoutes.js";
+import http from "http";
+import { initSocket } from "./sockets/socketManager.js"
 
 
 dotenv.config();
@@ -31,6 +33,9 @@ app.get("/api/test",(req, res)=>{
 
 app.use("/api/reports", reportRoutes)
 
+const server = http.createServer(app);
+initSocket(server);
+
 const startServer = async () => {
     await mongoconnect();
     // 1. Connect to PostgreSQL
@@ -38,7 +43,7 @@ const startServer = async () => {
     // 2. Sync Tables
     await syncSqlDatabase();
 
-    app.listen(PORT, () => {
+    server.listen(PORT, () => {
         console.log(`server is running on ${PORT}`);
     });
 }
