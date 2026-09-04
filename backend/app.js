@@ -6,8 +6,7 @@ import helmet from "helmet"
 import mongoconnect from "./config/mongodb.js"
 
 import { connectPostgres } from "./config/postgre.js"
-import ViolationRoute from "./routes/mongoRoutes/ViolationRoute.js"
-
+import reportRoutes from "./routes/reportRoutes.js"
 import { syncSqlDatabase } from "./models/sql/index.js";
 import authRoutes from "./routes/authRoutes.js";
 
@@ -30,7 +29,7 @@ app.get("/api/test",(req, res)=>{
     res.json({message: "frontend-backend connected"})
 })
 
-app.use("/api/violations", ViolationRoute)
+app.use("/api/reports", reportRoutes)
 
 const startServer = async () => {
     await mongoconnect();
