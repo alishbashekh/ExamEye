@@ -6,8 +6,11 @@ import helmet from "helmet"
 import mongoconnect from "./config/mongodb.js"
 
 import { connectPostgres } from "./config/postgre.js"
+import ViolationRoute from "./routes/mongoRoutes/ViolationRoute.js"
+
 import { syncSqlDatabase } from "./models/sql/index.js";
 import authRoutes from "./routes/authRoutes.js";
+
 
 dotenv.config();
 const PORT = process.env.PORT || 5000;
@@ -26,6 +29,8 @@ app.get("/", (req, res) => {
 app.get("/api/test",(req, res)=>{
     res.json({message: "frontend-backend connected"})
 })
+
+app.use("/api/violations", ViolationRoute)
 
 const startServer = async () => {
     await mongoconnect();
