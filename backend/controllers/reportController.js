@@ -1,4 +1,5 @@
 import ViolationLog from "../models/mongo/ViolationLog.js"
+import { calculateTrustscore } from "../utils/calculateTrustscore.js";
 
 export const createViolation = async (req, res) => {
    try{
@@ -32,4 +33,14 @@ export const getExamViolations = async (req, res) => {
     }catch(error){
      res.status(500).json({error: error.message});
     }
+};
+
+export const getTrustScore = async (req, res) => {
+   try{
+     const {examId, studentId} = req.params;
+     const result = await calculateTrustscore(examId, studentId);
+     res.json(result);
+   }catch(error){
+      res.status(500).json({error: error.message});
+   }
 };
