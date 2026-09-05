@@ -4,6 +4,7 @@ import dotenv from "dotenv"
 import cors from "cors"
 import helmet from "helmet"
 import mongoconnect from "./config/mongodb.js"
+import examRoutes from "./routes/examRoutes.js";
 
 import { connectPostgres } from "./config/postgre.js"
 import reportRoutes from "./routes/reportRoutes.js"
@@ -23,6 +24,7 @@ app.use(morgan("dev"));
 app.use(express.json());
 
 app.use("/api/auth", authRoutes);
+app.use("/api/exams", examRoutes);
 
 app.get("/", (req, res) => {
     res.json({ message: "backend is working!" })
