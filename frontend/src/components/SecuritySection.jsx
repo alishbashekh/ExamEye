@@ -1,29 +1,34 @@
+
 import React, { useEffect, useRef, useState } from "react";
 
 const slides = [
   {
-    title: "Verify Every Identity:",
+    number: "01",
+    title: "Verify Every Identity",
     description:
       "Face verification confirms that the registered student is the one taking the exam.",
     icon: "/images/shield.png",
     bg: "#FBDAE8",
   },
   {
-    title: "Real-Time Gaze Tracking:",
+    number: "02",
+    title: "Real-Time Gaze Tracking",
     description:
       "AI monitors gaze direction and detects unusual off-screen looking during the exam.",
     icon: "/images/eye-scan.png",
     bg: "#FFE9B3",
   },
   {
-    title: "AI Object Detection:",
+    number: "03",
+    title: "AI Object Detection",
     description:
       "AI detects prohibited objects such as mobile phones and books in the camera frame.",
     icon: "/images/borders.png",
     bg: "#EAF1FF",
   },
   {
-    title: "Browser Lockdown:",
+    number: "04",
+    title: "Browser Lockdown",
     description:
       "Prevents tab switching, copy-paste, right-click, and fullscreen exit during the exam.",
     icon: "/images/web-security.png",
@@ -32,42 +37,88 @@ const slides = [
 ];
 
 const Security = () => {
-  const [activeSlide, setActiveSlide] = useState(0);
-  const [isVisible, setIsVisible] = useState(false);
-
   const sectionRef = useRef(null);
-  const autoSlideRef = useRef(null);
 
-  /* =====================================================
-     SCROLL ANIMATION
-  ====================================================== */
+  const [activeSlide, setActiveSlide] = useState(0);
+  const [circleProgress, setCircleProgress] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
 
+  /* --------------------------------
+     SCREEN SIZE
+  -------------------------------- */
   useEffect(() => {
-    const section = sectionRef.current;
+    const checkScreen = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
 
-    if (!section) return;
+    checkScreen();
 
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-          observer.unobserve(section);
-        }
-      },
-      {
-        threshold: 0.25,
-      }
-    );
+    window.addEventListener("resize", checkScreen);
 
-    observer.observe(section);
-
-    return () => observer.disconnect();
+    return () => {
+      window.removeEventListener("resize", checkScreen);
+    };
   }, []);
 
-  /* =====================================================
-     CAROUSEL FUNCTIONS
-  ====================================================== */
+  /* --------------------------------
+     DESKTOP CIRCLE SCROLL ANIMATION
+  -------------------------------- */
+  useEffect(() => {
+    let animationFrame;
 
+    const updateCircle = () => {
+      if (!sectionRef.current) return;
+
+      const rect = sectionRef.current.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+
+      const startPoint = viewportHeight;
+      const endPoint = viewportHeight * 0.18;
+
+      let progress =
+        (startPoint - rect.top) / (startPoint - endPoint);
+
+      progress = Math.max(0, Math.min(1, progress));
+
+      setCircleProgress(progress);
+    };
+
+    const handleScroll = () => {
+      cancelAnimationFrame(animationFrame);
+
+      animationFrame = requestAnimationFrame(updateCircle);
+    };
+
+    updateCircle();
+
+    window.addEventListener("scroll", handleScroll, {
+      passive: true,
+    });
+
+    window.addEventListener("resize", handleScroll);
+
+    return () => {
+      cancelAnimationFrame(animationFrame);
+
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", handleScroll);
+    };
+  }, []);
+
+  /* --------------------------------
+     AUTO SLIDER
+  -------------------------------- */
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveSlide((current) => (current + 1) % slides.length);
+    }, 3500);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  /* --------------------------------
+     SLIDER CONTROLS
+  -------------------------------- */
   const nextSlide = () => {
     setActiveSlide((current) => (current + 1) % slides.length);
   };
@@ -82,134 +133,94 @@ const Security = () => {
     setActiveSlide(index);
   };
 
-  /* =====================================================
-     AUTOMATIC CARD CHANGE
-  ====================================================== */
-
-  useEffect(() => {
-    autoSlideRef.current = setInterval(() => {
-      setActiveSlide((current) => (current + 1) % slides.length);
-    }, 2800);
-
-    return () => {
-      clearInterval(autoSlideRef.current);
-    };
-  }, []);
-
-  /* =====================================================
-     RESET AUTO SLIDE AFTER USER INTERACTION
-  ====================================================== */
-
-  useEffect(() => {
-    if (activeSlide === null) return;
-
-    clearInterval(autoSlideRef.current);
-
-    autoSlideRef.current = setInterval(() => {
-      setActiveSlide((current) => (current + 1) % slides.length);
-    }, 2800);
-
-    return () => {
-      clearInterval(autoSlideRef.current);
-    };
-  }, [activeSlide]);
-
   const slide = slides[activeSlide];
+
+  const circleScale = 2.15 - circleProgress * 1.15;
 
   return (
     <section
       ref={sectionRef}
-      className="
-        relative
-        w-full
-        overflow-hidden
-        border-2
-        border-[#085631]
-        bg-white
-        px-5
-        py-20
-        sm:px-8
-        sm:py-24
-        lg:px-10
-        lg:py-[110px]
-      "
+      id="security"
+      className="relative w-full overflow-hidden bg-[#F8FBF9]"
       style={{
         fontFamily: "Inter, Helvetica, Arial, sans-serif",
       }}
     >
-      <div className="mx-auto w-full max-w-[1448px]">
+      {/* Background Grid */}
+      <div
+        className="pointer-events-none absolute inset-0 opacity-[0.28]"
+        style={{
+          backgroundImage:
+            "linear-gradient(to right, rgba(9,37,23,0.035) 1px, transparent 1px), linear-gradient(to bottom, rgba(9,37,23,0.035) 1px, transparent 1px)",
+          backgroundSize: "30px 30px",
+        }}
+      />
+
+      <div
+        className="
+          relative mx-auto w-full max-w-[1365px]
+          px-5
+          py-14
+          sm:px-8 sm:py-20
+          lg:px-[63px] lg:py-[115px]
+        "
+      >
         <div
           className="
-            grid
-            grid-cols-1
-            items-start
-            gap-12
-            lg:grid-cols-[1fr_603px]
-            lg:gap-[55px]
+            grid items-center
+            lg:grid-cols-[minmax(0,1fr)_minmax(500px,1fr)]
+            lg:gap-20
           "
         >
-          {/* =====================================================
-              LEFT SIDE
-          ====================================================== */}
-
+          {/* =====================================
+              DESKTOP ILLUSTRATION
+              Hidden on mobile/tablet
+          ===================================== */}
           <div
             className="
-              relative
-              flex
+              relative hidden
               min-h-[650px]
-              items-center
-              justify-center
-              overflow-visible
+              items-center justify-center
+              lg:flex
             "
           >
-            {/* =================================================
-                GREEN ANIMATED BACKGROUND
-            ================================================= */}
+            {/* Green Circle */}
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+              <div
+                className="
+                  h-[560px] w-[560px]
+                  rounded-full
+                  bg-[#092517]
+                  transition-transform duration-300 ease-out
+                "
+                style={{
+                  transform: `scale(${circleScale})`,
+                  transformOrigin: "center center",
+                }}
+              />
+            </div>
 
+            {/* Soft Glow */}
             <div
               className="
-                absolute
-                z-0
+                pointer-events-none
+                absolute left-1/2 top-1/2
+                z-[1]
+                h-[260px] w-[260px]
+                -translate-x-1/2 -translate-y-1/2
                 rounded-full
-                bg-[#085631]
-                transition-all
-                duration-[700ms]
+                bg-[#C5EED9]/10
+                blur-[75px]
               "
-              style={{
-                width: isVisible ? "560px" : "1971px",
-                height: isVisible ? "560px" : "1377px",
-
-                /*
-                  Before animation:
-                  huge green shape
-
-                  After animation:
-                  centered 560px circle
-                */
-                left: isVisible ? "50%" : "-410px",
-                top: isVisible ? "50%" : "-224px",
-
-                transform: isVisible
-                  ? "translate(-50%, -50%)"
-                  : "translate(0, 0)",
-
-                transitionTimingFunction:
-                  "cubic-bezier(0.42, 0, 0.58, 1)",
-              }}
             />
 
-            {/* =================================================
-                SECURITY ILLUSTRATION
-            ================================================= */}
-
+            {/* Illustration */}
             <div
               className="
-                relative
-                z-10
-                flex
-                w-full
-                items-center
-                justify-center
+                relative z-10
+                flex w-full
+                items-center justify-center
+                px-4
               "
             >
               <img
@@ -218,306 +229,338 @@ const Security = () => {
                 className="
                   h-auto
                   w-full
-                  max-w-[650px]
+                  max-w-[600px]
                   object-contain
+                  drop-shadow-[0_25px_45px_rgba(0,0,0,0.12)]
                 "
               />
             </div>
           </div>
 
-          {/* =====================================================
-              RIGHT SIDE
-          ===================================================== */}
-
-          <div className="relative z-20 pt-2 lg:pt-0">
-            {/* =================================================
-                SECURITY PILL
-            ================================================= */}
-
+          {/* =====================================
+              CONTENT
+          ===================================== */}
+          <div className="relative z-20">
+            {/* Security Pill */}
             <div
               className="
-                inline-flex
-                h-[41px]
-                min-w-[137px]
-                items-center
-                justify-center
-                rounded-[10px]
-                border-2
-                border-[rgba(42,129,88,0.70)]
-                bg-[#FCFBFC]
-                px-5
+                inline-flex items-center gap-2
+                rounded-full
+                border border-[#C5EED9]
+                bg-white/80
+                px-3.5 py-1.5
+                backdrop-blur-sm
+                sm:px-4 sm:py-2
               "
             >
+              <span className="h-2 w-2 rounded-full bg-[#168052]" />
+
               <span
                 className="
-                  text-[20px]
-                  font-medium
-                  leading-[45px]
+                  text-[12px]
+                  font-semibold
+                  tracking-[0.5px]
                   text-[#092517]
+                  sm:text-[14px]
                 "
               >
                 Security
               </span>
             </div>
 
-            {/* =================================================
-                HEADING
-            ================================================= */}
+            {/* Heading */}
+            <h2
+              className="
+                mt-5
+                max-w-[650px]
+                text-[34px]
+                font-bold
+                leading-[1.08]
+                tracking-[-1.3px]
+                text-[#092517]
+                sm:mt-6
+                sm:text-[46px]
+                sm:tracking-[-1.6px]
+                lg:text-[54px]
+              "
+            >
+              At ExamEye,
+              <br />
+              we take exam security seriously.
+            </h2>
 
-            <div className="mt-[30px]">
-              <h2
-                className="
-                  text-[43px]
-                  font-semibold
-                  leading-[45px]
-                  tracking-[-1.2px]
-                  text-[#1E1E1E]
-                  sm:text-[45px]
-                "
-              >
-                At ExamEye,
-                <br />
-                we take exam security seriously.
-              </h2>
+            {/* Description */}
+            <p
+              className="
+                mt-5
+                max-w-[610px]
+                text-[15px]
+                leading-6
+                text-[#4B5952]
+                sm:mt-6
+                sm:text-[18px]
+                sm:leading-[30px]
+              "
+            >
+              Our platform is designed to ensure a secure and fair exam
+              experience with multiple layers of AI-powered protection.
+            </p>
 
-              {/* =================================================
-                  SUBTITLE
-              ================================================= */}
-
-              <p
-                className="
-                  mt-[27px]
-                  max-w-[623px]
-                  text-[20px]
-                  font-normal
-                  leading-[34px]
-                  text-[#1E1E1E]
-                "
-              >
-                Our platform is designed to ensure a secure and fair exam
-                experience with multiple layers of AI-powered protection.
-              </p>
-            </div>
-
-            {/* =================================================
-                CAROUSEL
-            ================================================= */}
-
-            <div className="mt-[90px]">
-              <div
-                className="
-                  relative
-                  h-[365px]
-                  w-full
-                  max-w-[603px]
-                "
-              >
-                {/* =================================================
-                    LEFT ARROW
-                ================================================= */}
-
-                <button
-                  onClick={previousSlide}
-                  aria-label="Previous security feature"
-                  className="
-                    absolute
-                    left-0
-                    top-1/2
-                    z-30
-                    flex
-                    h-[58px]
-                    w-[34px]
-                    -translate-y-1/2
-                    rotate-180
-                    items-center
-                    justify-center
-                    border-0
-                    bg-transparent
-                    p-0
-                    transition-transform
-                    duration-200
-                    hover:scale-105
-                  "
-                >
-                  <span
-                    className="
-                      block
-                      h-[58px]
-                      w-[34px]
-                      bg-[#1E1E1E]
-                    "
-                    style={{
-                      clipPath: "polygon(0 0, 100% 50%, 0 100%)",
-                    }}
-                  />
-                </button>
-
-                {/* =================================================
-                    CARD
-                ================================================= */}
-
+            {/* =====================================
+                SECURITY CARD
+            ===================================== */}
+            <div
+              className="
+                mt-8
+                sm:mt-12
+              "
+            >
+              <div className="relative px-1 sm:px-0">
+                {/* Card */}
                 <div
                   key={activeSlide}
                   className="
-                    absolute
-                    left-[112px]
-                    top-0
-                    h-[311px]
-                    w-[379px]
-                    rounded-[35px]
-                    animate-[securityCard_400ms_ease-in-out]
+                    relative
+                    min-h-[300px]
+                    w-full
+                    overflow-hidden
+                    rounded-[24px]
+                    p-6
+                    shadow-[0_20px_50px_rgba(9,37,23,0.09)]
+                    animate-[securityCard_450ms_ease-out]
+                    sm:min-h-[325px]
+                    sm:max-w-[540px]
+                    sm:rounded-[28px]
+                    sm:p-9
                   "
                   style={{
                     backgroundColor: slide.bg,
                   }}
                 >
+                  {/* Background Number */}
                   <div
                     className="
-                      flex
-                      h-full
-                      w-full
-                      flex-col
-                      px-[40px]
-                      pb-[65px]
-                      pt-[45px]
+                      pointer-events-none
+                      absolute
+                      bottom-[-25px]
+                      right-[-5px]
+                      text-[110px]
+                      font-bold
+                      leading-none
+                      text-[#092517]/[0.035]
+                      sm:bottom-[-30px]
+                      sm:text-[150px]
                     "
                   >
-                    {/* ICON */}
+                    {slide.number}
+                  </div>
 
+                  {/* Icon */}
+                  <div
+                    className="
+                      relative z-10
+                      flex h-[52px] w-[52px]
+                      items-center justify-center
+                      sm:h-[64px] sm:w-[64px]
+                    "
+                  >
                     <img
                       src={slide.icon}
                       alt=""
-                      className="
-                        h-[62px]
-                        w-[62px]
-                        object-contain
-                      "
+                      className="h-full w-full object-contain"
                     />
+                  </div>
 
-                    {/* TEXT */}
+                  {/* Card Content */}
+                  <div className="relative z-10 mt-5 sm:mt-7">
+                    <p
+                      className="
+                        mb-1.5
+                        text-[10px]
+                        font-semibold
+                        uppercase
+                        tracking-[1.7px]
+                        text-[#092517]/60
+                        sm:mb-2
+                        sm:text-[12px]
+                        sm:tracking-[2px]
+                      "
+                    >
+                      Protection layer {slide.number}
+                    </p>
 
-                    <div className="mt-[37px]">
-                      <h3
-                        className="
-                          text-[25px]
-                          font-medium
-                          leading-[34px]
-                          text-[#1E1E1E]
-                        "
-                      >
-                        {slide.title}
-                      </h3>
+                    <h3
+                      className="
+                        max-w-[430px]
+                        text-[21px]
+                        font-semibold
+                        leading-[1.25]
+                        tracking-[-0.3px]
+                        text-[#092517]
+                        sm:text-[26px]
+                        sm:tracking-[-0.4px]
+                      "
+                    >
+                      {slide.title}
+                    </h3>
 
-                      <p
-                        className="
-                          mt-[14px]
-                          text-[16px]
-                          font-normal
-                          leading-[21px]
-                          text-[#1E1E1E]
-                        "
-                      >
-                        {slide.description}
-                      </p>
-                    </div>
+                    <p
+                      className="
+                        mt-2.5
+                        max-w-[455px]
+                        text-[14px]
+                        leading-[22px]
+                        text-[#26342D]
+                        sm:mt-3
+                        sm:text-[16px]
+                        sm:leading-6
+                      "
+                    >
+                      {slide.description}
+                    </p>
                   </div>
                 </div>
 
-                {/* =================================================
-                    RIGHT ARROW
-                ================================================= */}
-
+                {/* Previous */}
                 <button
-                  onClick={nextSlide}
-                  aria-label="Next security feature"
+                  type="button"
+                  onClick={previousSlide}
+                  aria-label="Previous security feature"
                   className="
+                    group
                     absolute
-                    right-0
+                    left-[-7px]
                     top-1/2
                     z-30
                     flex
-                    h-[58px]
-                    w-[34px]
+                    h-9 w-9
                     -translate-y-1/2
-                    items-center
-                    justify-center
-                    border-0
-                    bg-transparent
-                    p-0
-                    transition-transform
-                    duration-200
+                    items-center justify-center
+                    rounded-full
+                    border border-[#D7E4DC]
+                    bg-white
+                    shadow-[0_6px_20px_rgba(9,37,23,0.10)]
+                    transition-all duration-200
                     hover:scale-105
+                    hover:bg-[#092517]
+                    sm:left-[-20px]
+                    sm:h-11 sm:w-11
                   "
                 >
                   <span
                     className="
                       block
-                      h-[58px]
-                      w-[34px]
-                      bg-[#1E1E1E]
+                      h-[8px] w-[8px]
+                      -rotate-45
+                      border-b-2 border-l-2
+                      border-[#092517]
+                      transition-colors
+                      group-hover:border-white
+                      sm:h-[9px] sm:w-[9px]
                     "
-                    style={{
-                      clipPath: "polygon(0 0, 100% 50%, 0 100%)",
-                    }}
                   />
                 </button>
 
-                {/* =================================================
-                    PAGINATION
-                ================================================= */}
-
-                <div
+                {/* Next */}
+                <button
+                  type="button"
+                  onClick={nextSlide}
+                  aria-label="Next security feature"
                   className="
+                    group
                     absolute
-                    bottom-0
-                    left-[35px]
+                    right-[-7px]
+                    top-1/2
+                    z-30
                     flex
-                    items-center
-                    gap-[10px]
+                    h-9 w-9
+                    -translate-y-1/2
+                    items-center justify-center
+                    rounded-full
+                    border border-[#D7E4DC]
+                    bg-white
+                    shadow-[0_6px_20px_rgba(9,37,23,0.10)]
+                    transition-all duration-200
+                    hover:scale-105
+                    hover:bg-[#092517]
+                    sm:right-[-20px]
+                    sm:h-11 sm:w-11
                   "
                 >
-                  {slides.map((_, index) => (
-                    <button
-                      key={index}
-                      onClick={() => goToSlide(index)}
-                      aria-label={`Go to slide ${index + 1}`}
-                      className="
-                        h-[19px]
-                        w-[19px]
-                        rounded-full
-                        transition-all
-                        duration-200
-                      "
-                      style={{
-                        backgroundColor:
-                          activeSlide === index
-                            ? "#5BBE2F"
-                            : "#436556",
-                      }}
-                    />
-                  ))}
-                </div>
+                  <span
+                    className="
+                      block
+                      h-[8px] w-[8px]
+                      rotate-45
+                      border-r-2 border-t-2
+                      border-[#092517]
+                      transition-colors
+                      group-hover:border-white
+                      sm:h-[9px] sm:w-[9px]
+                    "
+                  />
+                </button>
+              </div>
+
+              {/* Pagination */}
+              <div
+                className="
+                  mt-5
+                  flex
+                  items-center
+                  justify-center
+                  gap-2
+                  sm:mt-6
+                  sm:justify-start
+                "
+              >
+                {slides.map((item, index) => (
+                  <button
+                    key={item.number}
+                    type="button"
+                    onClick={() => goToSlide(index)}
+                    aria-label={`Go to security feature ${index + 1}`}
+                    className={`
+                      h-2
+                      rounded-full
+                      transition-all duration-300
+                      ${
+                        activeSlide === index
+                          ? "w-8 bg-[#092517]"
+                          : "w-2 bg-[#AFC7B9] hover:bg-[#6D8A7B]"
+                      }
+                    `}
+                  />
+                ))}
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* =====================================================
-          CARD CHANGE ANIMATION
-      ===================================================== */}
-
+      {/* Animations */}
       <style>
         {`
           @keyframes securityCard {
             0% {
               opacity: 0;
-              transform: translateX(20px);
+              transform: translateY(12px);
             }
 
             100% {
               opacity: 1;
-              transform: translateX(0);
+              transform: translateY(0);
+            }
+          }
+
+          @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+              animation-duration: 0.01ms !important;
+              animation-iteration-count: 1 !important;
+              transition-duration: 0.01ms !important;
+              scroll-behavior: auto !important;
             }
           }
         `}
@@ -527,3 +570,4 @@ const Security = () => {
 };
 
 export default Security;
+
