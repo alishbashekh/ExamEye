@@ -3,10 +3,10 @@ import axios from "axios";
 
 import Navbar from "./components/Navbar";
 import Hero from "./components/Hero";
-import HowItWorksSection from "./components/HowItWorks";
 import HowItWorks from "./components/HowItWorks";
 import SecuritySection from "./components/SecuritySection";
 import Footer from "./components/Footer";
+import ExamScreen from "./components/ExamScreen";
 
 function App() {
   const [message, SetMessage] = useState("");
@@ -27,6 +27,7 @@ function App() {
 
       {/* Hero section component */}
       <main>
+        <ExamScreen/>
         <Hero />
         <HowItWorks />
         <SecuritySection />
