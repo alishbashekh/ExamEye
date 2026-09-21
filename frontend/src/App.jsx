@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import axios from "axios";
 
 import Navbar from "./components/Navbar";
 import Hero from "./components/Hero";
 import HowItWorks from "./components/HowItWorks";
 import SecuritySection from "./components/SecuritySection";
+import Process from "./components/Process";
 import Footer from "./components/Footer";
 import ExamScreen from "./components/ExamScreen";
 
@@ -46,4 +48,4 @@ function App() {
   );
 }
 
-export default App;  
+export default App;
