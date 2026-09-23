@@ -4,40 +4,38 @@ import axios from "axios";
 
 import Navbar from "./components/Navbar";
 import Hero from "./components/Hero";
-import HowItWorks from "./components/HowItWorks";
+import Features from "./components/Features"; // <-- was missing, used in LandingPage
 import SecuritySection from "./components/SecuritySection";
 import Process from "./components/Process";
 import Footer from "./components/Footer";
 import Login from "./components/Login";
 import Register from "./components/Register";
 import StudentVerification from "./components/StudentVerification";
+import ExamScreen from "./components/ExamScreen";
 
 // Landing Page (Home Route) Component
 const LandingPage = () => {
   return (
     <>
       <Navbar />
-
       <main>
         <Hero />
         <Features />
         <SecuritySection />
         <Process />
       </main>
-
       <Footer />
     </>
   );
 };
-import ExamScreen from "./components/ExamScreen";
 
 function App() {
-  const [message, SetMessage] = useState("");
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
     axios
       .get("http://localhost:5000/api/test")
-      .then((res) => SetMessage(res.data.message))
+      .then((res) => setMessage(res.data.message))
       .catch((err) =>
         console.error("frontend-backend connection failed", err)
       );
@@ -68,28 +66,6 @@ function App() {
         )}
       </div>
     </Router>
-    <div className="min-h-screen bg-white">
-      {/* Navbar component */}
-      <Navbar />
-
-      {/* Hero section component */}
-      <main>
-        <ExamScreen/>
-        <Hero />
-        <HowItWorks />
-        <SecuritySection />
-        <Footer/>
-      </main>
-
-       
-
-      {/* Optional: Backend API connection test message (agar aap monitor karna chahein) */}
-      {message && (
-        <div className="fixed bottom-4 right-4 rounded-md bg-[#0A291A] px-4 py-2 text-xs text-white shadow-lg">
-          Backend Status: {message}
-        </div>
-      )}
-    </div>
   );
 }
 
