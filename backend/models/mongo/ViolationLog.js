@@ -12,18 +12,22 @@ const ViolationLogSchema = new mongoose.Schema({
     type:{
         type: String,
         enum: [
-            "PHONE_DETECTED",
             "TAB_SWITCH",
+            "FULLSCREEN_EXIT",
+            "COPY_ATTEMPT",
+            "PASTE_ATTEMPT",
+            "DEV_TOOLS_OPEN",
+            "PHONE_DETECTED",
             "FACE_NOT_MATCHED",
             "MULTIPLE_FACES",
             "NO_FACE_DETECTED",
-            "COPY_PASTE_ATTEMPT",
-            "FULLSCREEN_EXIT",
+              
         ],
         required: true,
     },
     confidence:{
         type: Number,
+        default: 1.0,
     },
     timestamp:{
         type: Date,
