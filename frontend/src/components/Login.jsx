@@ -2,13 +2,18 @@ import React, { useState } from "react";
 
 import { Mail, Lock, Eye, EyeOff, Check } from "lucide-react";
 
-import { Link } from "react-router-dom";
+import { Link , useNavigate } from "react-router-dom";
 
 import { ArrowUpRight } from "lucide-react";
+import axios from "axios";
 
 
 
 const Login = () => {
+
+  const [Error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
 
@@ -38,15 +43,30 @@ const Login = () => {
 
   };
 
+const handleSubmit = async (e) =>{
+  e.preventDefault();
+  setError("");
+  setLoading(true);
+   
+  try{
+   const res = await axios.post("http://localhost:5000/api/auth/login",{
+     email: formData.email,
+     password: formData.password,
+   });
+   localStorage.setItem("token", res.data.token);
+   localStorage.setItem("user", JSON.stringify(res.data.user));
 
-
-  const handleSubmit = (e) => {
-
-    e.preventDefault();
-
-    console.log("Login submitted:", formData);
-
-  };
+   if(res.data.user.role === "teacher"){
+     navigate("/teacher-dashboard");
+   }else {
+    navigate("/student-dashboard");
+   }
+  }catch(err){
+   setError(err.response?.data?.message || "login failed check your credentials.");
+  }finally{
+    setLoading(false);
+  }
+};
 
 
 
@@ -153,6 +173,11 @@ const Login = () => {
 
 
             <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-6">
+              {Error && (
+              <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600">
+              {Error}
+              </div>
+               )}
 
               {/* EMAIL FIELD */}
 
@@ -331,27 +356,19 @@ const Login = () => {
            
 
 <button
-
   type="submit"
-
-  className="group relative mt-1 flex h-[56px] w-full items-center justify-center gap-2 overflow-hidden rounded-[14px] bg-[#092517] text-[15px] font-semibold text-white shadow-[0_10px_25px_rgba(9,37,23,0.16)] transition-all duration-300 hover:-translate-y-[2px] hover:bg-[#071d12] hover:shadow-[0_14px_30px_rgba(9,37,23,0.22)] active:translate-y-0"
-
+  disabled={loading}
+  className="group relative mt-1 flex h-[56px] w-full items-center justify-center gap-2 overflow-hidden rounded-[14px] bg-[#092517] text-[15px] font-semibold text-white shadow-[0_10px_25px_rgba(9,37,23,0.16)] transition-all duration-300 hover:-translate-y-[2px] hover:bg-[#071d12] hover:shadow-[0_14px_30px_rgba(9,37,23,0.22)] active:translate-y-0 disabled:opacity-60"
 >
-
   <span className="transition-transform duration-300 group-hover:-translate-x-1">
-
-    Sign In
-
+    {loading ? "Signing in..." : "Sign In"}
   </span>
 
-
-
-  <ArrowUpRight
-
-    className="h-[18px] w-[18px] transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1"
-
-  />
-
+  {!loading && (
+    <ArrowUpRight
+      className="h-[18px] w-[18px] transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1"
+    />
+  )}
 </button>
 
 
