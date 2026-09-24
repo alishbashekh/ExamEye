@@ -19,6 +19,7 @@ const Register = () => {
   // Verification states
   const [isBiometricVerified, setIsBiometricVerified] = useState(false);
   const [capturedImage, setCapturedImage] = useState(null);
+  const [faceDescriptor, setFaceDescriptor] = useState(null); // Added descriptor state
   const [errorMessage, setErrorMessage] = useState("");
   const [showImageModal, setShowImageModal] = useState(false);
 
@@ -28,14 +29,19 @@ const Register = () => {
       setFormData(location.state.formData);
     }
     
-    // Strict Check: Check if capturedImage actual Base64/DataURL image string exists
+    // Check if capturedImage & faceDescriptor exist from student verification
     if (location.state?.isBiometricVerified && location.state?.capturedImage) {
       setIsBiometricVerified(true);
       setCapturedImage(location.state.capturedImage);
+      // Retrieve the faceDescriptor array passed back from StudentVerification component
+      if (location.state?.faceDescriptor) {
+        setFaceDescriptor(location.state.faceDescriptor);
+      }
       setErrorMessage("");
     } else {
       setIsBiometricVerified(false);
       setCapturedImage(null);
+      setFaceDescriptor(null);
     }
   }, [location.state]);
 
@@ -60,6 +66,7 @@ const Register = () => {
     e.stopPropagation(); // Prevent opening modal on delete click
     setIsBiometricVerified(false);
     setCapturedImage(null);
+    setFaceDescriptor(null);
   };
 
   const handleGoToVerification = () => {
@@ -72,32 +79,33 @@ const Register = () => {
     e.preventDefault();
     
     setErrorMessage("");
-    if(formData.role === "student" && (!isBiometricVerified || !capturedImage)){
-      setErrorMessage("please complete face Biometric verification before registering!");
+    if (formData.role === "student" && (!isBiometricVerified || !capturedImage)) {
+      setErrorMessage("Please complete face Biometric verification before registering!");
       return;
     }
 
     setIsSubmitting(true);
-    try{
-     const res = await axios.post("http://localhost:5000/api/auth/register", {
-      name: formData.fullName,
-      email: formData.email,
-      password: formData.password,
-      role: formData.role,
-      faceDescriptor: null,
-     });
-     localStorage.setItem("token", res.data.token);
-     localStorage.setItem("user", JSON.stringify(res.data.user));
+    try {
+      const res = await axios.post("http://localhost:5000/api/auth/register", {
+        name: formData.fullName,
+        email: formData.email,
+        password: formData.password,
+        role: formData.role,
+        faceDescriptor: formData.role === "student" ? faceDescriptor : null,
+      });
 
-     if(formData.role === "teacher"){
-      navigate("/teacher-dashboard");
-     }else{
-      navigate("/student-dashboard");
-     }
-    }catch(err){
-     setErrorMessage(err.response?.data?.message || "Registeration failed. please try again!");
-    }finally{
-      setIsSubmitting(false)
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("user", JSON.stringify(res.data.user));
+
+      if (formData.role === "teacher") {
+        navigate("/teacher-dashboard");
+      } else {
+        navigate("/student-dashboard");
+      }
+    } catch (err) {
+      setErrorMessage(err.response?.data?.message || "Registration failed. Please try again!");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -282,7 +290,7 @@ const Register = () => {
 
               {/* ERROR MESSAGE */}
               {errorMessage && (
-                <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-600 font-medium">
+                <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-medium text-red-600">
                   {errorMessage}
                 </div>
               )}
@@ -325,17 +333,17 @@ const Register = () => {
               )}
 
               {/* SUBMIT BUTTON */}
-             <button
-  type="submit"
-  disabled={isSubmitting}
-  className="mt-2 w-full cursor-pointer rounded-xl bg-[#092517] py-3 text-sm font-semibold text-white shadow-md transition-all duration-300 hover:bg-[#071d12] hover:shadow-lg active:scale-[0.99] sm:rounded-2xl sm:py-4 sm:text-base disabled:opacity-60"
->
-  {isSubmitting
-    ? "Creating account..."
-    : formData.role === "teacher"
-    ? "Register as Teacher"
-    : "Register as Student"}
-</button>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="mt-2 w-full cursor-pointer rounded-xl bg-[#092517] py-3 text-sm font-semibold text-white shadow-md transition-all duration-300 hover:bg-[#071d12] hover:shadow-lg active:scale-[0.99] sm:rounded-2xl sm:py-4 sm:text-base disabled:opacity-60"
+              >
+                {isSubmitting
+                  ? "Creating account..."
+                  : formData.role === "teacher"
+                  ? "Register as Teacher"
+                  : "Register as Student"}
+              </button>
             </form>
 
             <p className="mt-5 text-center text-xs text-[#526058] sm:text-sm">

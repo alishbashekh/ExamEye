@@ -11,7 +11,7 @@ import Footer from "./components/Footer";
 import Login from "./components/Login";
 import Register from "./components/Register";
 import StudentVerification from "./components/StudentVerification";
-import ExamScreen from "./components/ExamScreen";
+//import ExamScreen from "./components/ExamScreen";
 
 // Landing Page (Home Route) Component
 const LandingPage = () => {
