@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Mail, Lock, User, Eye, EyeOff, GraduationCap, UserCheck, CheckCircle2, AlertTriangle, ArrowRight, X, ZoomIn } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+import axios from "axios";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -13,6 +14,7 @@ const Register = () => {
     role: "teacher",
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Verification states
   const [isBiometricVerified, setIsBiometricVerified] = useState(false);
@@ -66,17 +68,36 @@ const Register = () => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    setErrorMessage("");
+    if(formData.role === "student" && (!isBiometricVerified || !capturedImage)){
+      setErrorMessage("please complete face Biometric verification before registering!");
+      return;
+    }
 
-    if (formData.role === "teacher") {
+    setIsSubmitting(true);
+    try{
+     const res = await axios.post("http://localhost:5000/api/auth/register", {
+      name: formData.fullName,
+      email: formData.email,
+      password: formData.password,
+      role: formData.role,
+      faceDescriptor: null,
+     });
+     localStorage.setItem("token", res.data.token);
+     localStorage.setItem("user", JSON.stringify(res.data.user));
+
+     if(formData.role === "teacher"){
       navigate("/teacher-dashboard");
-    } else if (formData.role === "student") {
-      if (!isBiometricVerified || !capturedImage) {
-        setErrorMessage("Please complete Face Biometric Verification before registering!");
-      } else {
-        navigate("/student-dashboard");
-      }
+     }else{
+      navigate("/student-dashboard");
+     }
+    }catch(err){
+     setErrorMessage(err.response?.data?.message || "Registeration failed. please try again!");
+    }finally{
+      setIsSubmitting(false)
     }
   };
 
@@ -304,12 +325,17 @@ const Register = () => {
               )}
 
               {/* SUBMIT BUTTON */}
-              <button
-                type="submit"
-                className="mt-2 w-full cursor-pointer rounded-xl bg-[#092517] py-3 text-sm font-semibold text-white shadow-md transition-all duration-300 hover:bg-[#071d12] hover:shadow-lg active:scale-[0.99] sm:rounded-2xl sm:py-4 sm:text-base"
-              >
-                {formData.role === "teacher" ? "Register as Teacher" : "Register as Student"}
-              </button>
+             <button
+  type="submit"
+  disabled={isSubmitting}
+  className="mt-2 w-full cursor-pointer rounded-xl bg-[#092517] py-3 text-sm font-semibold text-white shadow-md transition-all duration-300 hover:bg-[#071d12] hover:shadow-lg active:scale-[0.99] sm:rounded-2xl sm:py-4 sm:text-base disabled:opacity-60"
+>
+  {isSubmitting
+    ? "Creating account..."
+    : formData.role === "teacher"
+    ? "Register as Teacher"
+    : "Register as Student"}
+</button>
             </form>
 
             <p className="mt-5 text-center text-xs text-[#526058] sm:text-sm">
