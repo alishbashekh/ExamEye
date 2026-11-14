@@ -4,14 +4,19 @@ import axios from "axios";
 
 import Navbar from "./components/Navbar";
 import Hero from "./components/Hero";
-import Features from "./components/Features"; // <-- was missing, used in LandingPage
+import Features from "./components/Features";
 import SecuritySection from "./components/SecuritySection";
 import Process from "./components/Process";
 import Footer from "./components/Footer";
 import Login from "./components/Login";
 import Register from "./components/Register";
 import StudentVerification from "./components/StudentVerification";
-//import ExamScreen from "./components/ExamScreen";
+import TeacherDashboard from "./components/Teacher/TeacherDashboard";
+
+// Naye Student components import karein
+import StudentExamEntry from "./components/Student/StudentExamEntry";
+import ExamScreen from "./components/Student/ExamScreen";
+import ExamResult from "./components/Student/ExamResult";
 
 // Landing Page (Home Route) Component
 const LandingPage = () => {
@@ -56,6 +61,29 @@ function App() {
 
           {/* Student Biometric Verification Page */}
           <Route path="/student-verification" element={<StudentVerification />} />
+
+          {/* Teacher Dashboard Page */}
+          <Route path="/teacher-dashboard" element={<TeacherDashboard />} />
+
+          {/* Student Exam Entry & Instructions Page */}
+        
+            <Route path="/student-exam" element={<StudentExamEntry />} />
+            <Route path="/student-exam/:examId" element={<StudentExamEntry />} />
+          {/* Live Exam Screen */}
+          <Route path="/live-exam/:examId" element={<ExamScreen />} />
+          <Route path="/student-exam" element={<ExamScreen />} />
+          <Route path="/StudentExamEntry" element={<StudentExamEntry />} />
+          <Route path="/exam-result" element={<ExamResult />} />
+
+
+
+
+
+
+
+
+
+
         </Routes>
 
         {/* Backend API Status Toast */}
