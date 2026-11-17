@@ -24,6 +24,7 @@ const LandingPage = () => {
     <>
       <Navbar />
       <main>
+        
         <Hero />
         <Features />
         <SecuritySection />
@@ -87,11 +88,11 @@ function App() {
         </Routes>
 
         {/* Backend API Status Toast */}
-        {message && (
+        {/* {message && (
           <div className="fixed bottom-4 right-4 z-50 rounded-md bg-[#0A291A] px-4 py-2 text-xs text-white shadow-lg">
             Backend Status: {message}
           </div>
-        )}
+        )} */}
       </div>
     </Router>
   );
