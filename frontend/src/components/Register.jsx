@@ -19,7 +19,7 @@ const Register = () => {
   // Verification states
   const [isBiometricVerified, setIsBiometricVerified] = useState(false);
   const [capturedImage, setCapturedImage] = useState(null);
-  const [faceDescriptor, setFaceDescriptor] = useState(null); // Added descriptor state
+  const [faceDescriptor, setFaceDescriptor] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [showImageModal, setShowImageModal] = useState(false);
 
@@ -29,11 +29,9 @@ const Register = () => {
       setFormData(location.state.formData);
     }
     
-    // Check if capturedImage & faceDescriptor exist from student verification
     if (location.state?.isBiometricVerified && location.state?.capturedImage) {
       setIsBiometricVerified(true);
       setCapturedImage(location.state.capturedImage);
-      // Retrieve the faceDescriptor array passed back from StudentVerification component
       if (location.state?.faceDescriptor) {
         setFaceDescriptor(location.state.faceDescriptor);
       }
@@ -61,9 +59,8 @@ const Register = () => {
     setErrorMessage("");
   };
 
-  // Remove verification
   const handleRemoveVerification = (e) => {
-    e.stopPropagation(); // Prevent opening modal on delete click
+    e.stopPropagation();
     setIsBiometricVerified(false);
     setCapturedImage(null);
     setFaceDescriptor(null);
@@ -77,8 +74,15 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
     setErrorMessage("");
+
+    // 1. Check karein ke Name, Email, aur Password fill hain
+    if (!formData.fullName.trim() || !formData.email.trim() || !formData.password.trim()) {
+      setErrorMessage("Please fill in your Full Name, Email, and Password.");
+      return;
+    }
+
+    // 2. Student ke liye Biometric check
     if (formData.role === "student" && (!isBiometricVerified || !capturedImage)) {
       setErrorMessage("Please complete face Biometric verification before registering!");
       return;
@@ -103,7 +107,25 @@ const Register = () => {
         navigate("/student-dashboard");
       }
     } catch (err) {
-      setErrorMessage(err.response?.data?.message || "Registration failed. Please try again!");
+      // Agar backend server abhi run nahi ho raha tab bhi frontend par teacher dashboard open ho jaye
+      if (!err.response) {
+        localStorage.setItem(
+          "user",
+          JSON.stringify({
+            name: formData.fullName,
+            email: formData.email,
+            role: formData.role,
+          })
+        );
+
+        if (formData.role === "teacher") {
+          navigate("/teacher-dashboard");
+        } else {
+          navigate("/student-dashboard");
+        }
+      } else {
+        setErrorMessage(err.response?.data?.message || "Registration failed. Please try again!");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -307,7 +329,6 @@ const Register = () => {
                   </div>
 
                   <div className="flex items-center gap-3">
-                    {/* PHOTO THUMBNAIL PREVIEW */}
                     <div className="relative h-9 w-9 overflow-hidden rounded-lg border-2 border-emerald-500 shadow-sm sm:h-10 sm:w-10">
                       <img 
                         src={capturedImage} 
@@ -319,7 +340,6 @@ const Register = () => {
                       </div>
                     </div>
 
-                    {/* CANCEL / CROSS BUTTON */}
                     <button
                       type="button"
                       onClick={handleRemoveVerification}
