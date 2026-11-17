@@ -251,12 +251,41 @@ const StudentVerification = () => {
                 )}
 
                 {/* Processing Descriptor Loader Overlay */}
-                {isProcessingFace && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 text-white backdrop-blur-xs">
-                    <Loader2 className="mb-2 h-8 w-8 animate-spin text-emerald-400" />
-                    <span className="text-xs font-semibold">Extracting Facial Descriptor...</span>
-                  </div>
-                )}
+{/* Processing Descriptor Loader Overlay - Green Vertical Scanning Grid */}
+{isProcessingFace && (
+  <div className="absolute inset-0 overflow-hidden bg-black/40 backdrop-blur-[2px]">
+    {/* Base Captured Preview Image under scan */}
+    {capturedImage && (
+      <img
+        src={capturedImage}
+        alt="Processing Face"
+        className="h-full w-full object-cover [transform:rotateY(180deg)] opacity-70"
+      />
+    )}
+
+    {/* Vertical Green Grid Lines Overlay */}
+    <div 
+      className="pointer-events-none absolute inset-0 opacity-30"
+      style={{
+        backgroundImage: `linear-gradient(to right, #10b981 1px, transparent 1px)`,
+        backgroundSize: '24px 100%'
+      }}
+    />
+
+    {/* Animated Top-to-Bottom Green Scan Beam */}
+    <div className="animate-scan absolute left-0 right-0 h-16 w-full bg-gradient-to-b from-emerald-500/0 via-emerald-500/40 to-emerald-400 shadow-[0_4px_20px_rgba(16,185,129,0.8)]">
+      <div className="h-0.5 w-full bg-emerald-300 shadow-[0_0_12px_#34d399]" />
+    </div>
+
+    {/* Center Dynamic Label */}
+    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 rounded-full border border-emerald-500/30 bg-black/75 px-4 py-1.5 backdrop-blur-md">
+      <span className="flex items-center gap-2 text-xs font-bold text-emerald-400">
+        <span className="h-2 w-2 animate-ping rounded-full bg-emerald-400" />
+        Extracting Facial Biometrics...
+      </span>
+    </div>
+  </div>
+)}
 
                 {/* Captured Image State */}
                 {capturedImage && !isProcessingFace && (
