@@ -41,10 +41,20 @@ const Exam = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false,
     },
+     code: {
+      type: DataTypes.STRING(6),
+      allowNull: true, // old exams have no code
+    },
+    sensitivity: {
+      type: DataTypes.STRING(10),
+      allowNull: true,
+      defaultValue: "Medium",
+    },
   },
   {
     timestamps: true,
     tableName: "exams",
+    indexes: [{ unique: true, fields: ["code"], name: "exams_code_unique" }],
   }
 );
 

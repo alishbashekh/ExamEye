@@ -1,5 +1,5 @@
 import express from "express";
-import { createExam, getAllExams, getExamById } from "../controllers/examController.js";
+import { createExam, getAllExams, getExamById, getExamByCode} from "../controllers/examController.js";
 import upload from "../middlewares/upload.js";
 import { importQuestions } from "../controllers/questionImportController.js";
 const router = express.Router();
@@ -15,5 +15,8 @@ router.get("/", getAllExams);
 
 // Route: GET /api/exams/:id - Get single exam by ID
 router.get("/:id", getExamById);
+
+// Route: GET /api/exams/code/:code - Student-safe exam lookup (no answers)
+router.get("/code/:code", getExamByCode);
 
 export default router;

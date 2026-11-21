@@ -1,21 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
-  Plus, 
-  Trash2, 
-  Copy, 
-  Check, 
-  Sparkles, 
-  BookOpen, 
-  ArrowRight,
-  CheckCircle2,
-  X,
-  MessageCircle
+  Plus, Trash2, Copy, Check, Sparkles, BookOpen, ArrowRight,
+  CheckCircle2, X, MessageCircle, Upload, Download
 } from 'lucide-react';
 
 export default function CreateExam({ onExamCreated }) {
   const [examData, setExamData] = useState({
     title: '',
     duration: '',
+     description: '',
     sensitivity: 'Medium',
   });
 
@@ -34,12 +27,16 @@ export default function CreateExam({ onExamCreated }) {
   const [copiedCode, setCopiedCode] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [error, setError] = useState('');
+  const fileRef = useRef(null);
+const [preview, setPreview] = useState(null); // { questions, errors }
+const [importing, setImporting] = useState(false);
+const [saving, setSaving] = useState(false);
 
   const handleAddQuestion = () => {
     setQuestions([
       ...questions,
       { 
-        id: questions.length + 1, 
+        id: Date.now(), 
         questionText: '', 
         type: 'mcq', 
         options: ['', '', '', ''], 
@@ -85,56 +82,175 @@ export default function CreateExam({ onExamCreated }) {
     }));
   };
 
-  const handleGenerateExam = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setError('');
+  const mapImportedQuestion = (q, index) => {
+  const id = Date.now() + index;
 
-    if (!examData.title.trim() || !examData.duration) {
-      setError('Please provide an Exam Title and Time Limit.');
+  if (q.questionType === 'true_false') {
+    return {
+      id,
+      questionText: q.questionText,
+      type: 'true-false',
+      options: ['True', 'False'],
+      correctAnswer: q.correctAnswer, // "True" or "False"
+    };
+  }
+
+  const options = [0, 1, 2, 3].map((i) => (q.options || [])[i] || '');
+  const idx = options.indexOf(q.correctAnswer);
+  return {
+    id,
+    questionText: q.questionText,
+    type: 'mcq',
+    options,
+    correctAnswer: String(idx >= 0 ? idx : 0), // index string, like your dropdown
+  };
+};
+
+const handleImport = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const formData = new FormData();
+  formData.append('file', file); // key must be "file"
+
+  try {
+    setImporting(true);
+    setError('');
+    const res = await fetch('http://localhost:5000/api/exams/import-questions', {
+      method: 'POST',
+      body: formData, // don't set Content-Type yourself
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setError(data.message || 'Import failed.');
       return;
     }
+    setPreview(data);
+  } catch (err) {
+    setError('Could not reach the server. Is the backend running?');
+  } finally {
+    setImporting(false);
+    e.target.value = ''; // lets the same file be picked again
+  }
+};
 
-    for (let i = 0; i < questions.length; i++) {
-      if (!questions[i].questionText.trim()) {
-        setError(`Question #${i + 1} statement cannot be empty.`);
+const confirmImport = () => {
+  const imported = preview.questions.map(mapImportedQuestion);
+  // if the form only has the empty starter question, replace it
+  const onlyBlank = questions.length === 1 && !questions[0].questionText.trim();
+  setQuestions(onlyBlank ? imported : [...questions, ...imported]);
+  setPreview(null);
+  setError('');
+};
+
+const handleDownloadTemplate = () => {
+  const csv =
+    'question,type,optionA,optionB,optionC,optionD,correct,marks\n' +
+    'What does HTTP stand for?,mcq,HyperText Transfer Protocol,High Transfer Text Protocol,Hyper Terminal Protocol,None of these,A,1\n' +
+    'The sky is blue.,true_false,,,,,True,1\n';
+  const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'questions_template.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
+  const handleGenerateExam = async (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  setError('');
+
+  if (!examData.title.trim() || !examData.duration.trim() ) {
+    setError('Please provide an Exam Title and Time Limit.');
+    return;
+  }
+
+  for (let i = 0; i < questions.length; i++) {
+    const q = questions[i];
+    if (!q.questionText.trim()) {
+      setError(`Question #${i + 1} statement cannot be empty.`);
+      return;
+    }
+    if (q.type === 'mcq') {
+      const filled = q.options.filter((o) => o.trim()).length;
+      if (filled < 2) {
+        setError(`Question #${i + 1} needs at least 2 options.`);
+        return;
+      }
+      if (!q.options[Number(q.correctAnswer)]?.trim()) {
+        setError(`Question #${i + 1}: the correct answer points to an empty option.`);
         return;
       }
     }
+  }
 
-    const randomCode = Math.floor(100000 + Math.random() * 900000);
-    const formattedCode = `${String(randomCode).slice(0, 3)}-${String(randomCode).slice(3)}`;
-    const examId = `EXAM-${Math.floor(1000 + Math.random() * 9000)}`;
+  // convert cards to the Question model shape (same format the import uses)
+  const payloadQuestions = questions.map((q) => ({
+    questionText: q.questionText.trim(),
+    questionType: q.type === 'true-false' ? 'true_false' : 'mcq',
+    options:
+      q.type === 'true-false'
+        ? ['True', 'False']
+        : q.options.map((o) => o.trim()).filter(Boolean),
+    correctAnswer:
+      q.type === 'true-false'
+        ? q.correctAnswer
+        : q.options[Number(q.correctAnswer)].trim(),
+    marks: 1,
+  }));
 
-    const examObject = {
-      id: examId,
-      title: examData.title,
-      duration: Number(examData.duration),
-      sensitivity: examData.sensitivity,
-      code: formattedCode,
-      questions: questions,
-      createdAt: new Date().toLocaleTimeString(),
-    };
+  const totalMarks = payloadQuestions.reduce((sum, q) => sum + q.marks, 0);
 
-    // Base64 Payload encoding so exam questions & answers travel inside the link
-    const jsonString = JSON.stringify(examObject);
-    const base64Payload = btoa(encodeURIComponent(jsonString));
-    
-    // Link directly pointing to the StudentExamEntry route/file path
-    const examEntryLink = `${window.location.origin}/StudentExamEntry?payload=${base64Payload}`;
+  // CHECK: replace with however your login stores the teacher's numeric id
+  const teacherId = JSON.parse(localStorage.getItem('user') || '{}')?.id;
+  if (!teacherId) {
+    setError('Could not find the logged-in teacher. Please log in again.');
+    return;
+  }
 
-    const finalExamRecord = {
-      ...examObject,
-      link: examEntryLink
-    };
+  // the form has no start/end pickers yet: open now, close in 24 hours
+  const startTime = new Date();
+  const endTime = new Date(startTime.getTime() + 24 * 60 * 60 * 1000);
 
-    // Save locally for Teacher Dashboard overview
-    const existingExams = JSON.parse(localStorage.getItem('teacherExams') || '[]');
-    localStorage.setItem('teacherExams', JSON.stringify([finalExamRecord, ...existingExams]));
+  try {
+    setSaving(true);
+    const res = await fetch('http://localhost:5000/api/exams', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: examData.title.trim(),
+        description: examData.description.trim(),
+        durationMinutes: Number(examData.duration),
+        startTime,
+        endTime,
+        totalMarks,
+        passingMarks: Math.ceil(totalMarks / 2),
+        teacherId,
+        sensitivity: examData.sensitivity,
+        questions: payloadQuestions,
+      }),
+    });
 
-    setGeneratedExam(finalExamRecord);
+    const data = await res.json();
+    if (!res.ok) {
+      setError(data.message || 'Could not create the exam.');
+      return;
+    }
+
+    const exam = data.exam;
+    setGeneratedExam({
+      ...exam,
+      code: `${exam.code.slice(0, 3)}-${exam.code.slice(3)}`, // shown as 123-456
+      link: `${window.location.origin}/StudentExamEntry?code=${exam.code}`,
+    });
     setShowModal(true);
-  };
+  } catch (err) {
+    setError('Could not reach the server. Is the backend running?');
+  } finally {
+    setSaving(false);
+  }
+};
 
   const handleCopyCode = (code) => {
     navigator.clipboard.writeText(code);
@@ -149,7 +265,7 @@ export default function CreateExam({ onExamCreated }) {
   };
 
   const handleWhatsAppShare = (exam) => {
-    const text = `*ExamEye - Secure Proctored Examination*\n\n📌 *Exam:* ${exam.title}\n⏱️ *Duration:* ${exam.duration} Minutes\n🔑 *Access Code:* ${exam.code}\n\n🔗 *Open Exam Entry Link:*\n${exam.link}`;
+    const text = `*ExamEye - Secure Proctored Examination*\n\n📌 *Exam:* ${exam.title}\n⏱️ *Duration:* ${exam.durationMinutes} Minutes\n🔑 *Access Code:* ${exam.code}\n\n🔗 *Open Exam Entry Link:*\n${exam.link}`;
     const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
     window.open(whatsappUrl, '_blank');
   };
@@ -196,7 +312,19 @@ export default function CreateExam({ onExamCreated }) {
             />
           </div>
         </div>
-
+        <div>
+  <label className="block text-xs font-semibold text-neutral-700 mb-1.5">
+    Description <span className="text-neutral-400 font-normal">(optional)</span>
+  </label>
+  <textarea
+    rows={3}
+    maxLength={500}
+    placeholder="e.g. Chapters 1 to 4. Closed book. Calculators not allowed."
+    value={examData.description}
+    onChange={(e) => setExamData({ ...examData, description: e.target.value })}
+    className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm focus:bg-white focus:border-[#092517] outline-none transition resize-none"
+  />
+</div>
         <div>
           <label className="block text-xs font-semibold text-neutral-700 mb-1.5">AI Proctoring Sensitivity</label>
           <select 
@@ -218,13 +346,37 @@ export default function CreateExam({ onExamCreated }) {
               <BookOpen className="w-5 h-5 text-[#092517]" />
               Exam Questions & Answer Key ({questions.length})
             </h4>
-            <button 
-              type="button"
-              onClick={handleAddQuestion}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-50 text-[#092517] hover:bg-emerald-100 text-xs font-bold transition cursor-pointer"
-            >
-              <Plus className="w-4 h-4" /> Add Question
-            </button>
+           <div className="flex items-center gap-2">
+  <input
+    type="file"
+    accept=".csv,.xlsx"
+    ref={fileRef}
+    onChange={handleImport}
+    hidden
+  />
+  <button
+    type="button"
+    onClick={handleDownloadTemplate}
+    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-neutral-500 hover:text-[#092517] text-xs font-semibold transition cursor-pointer"
+  >
+    <Download className="w-4 h-4" /> Template
+  </button>
+  <button
+    type="button"
+    onClick={() => fileRef.current.click()}
+    disabled={importing}
+    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-emerald-200 text-[#092517] hover:bg-emerald-50 text-xs font-bold transition cursor-pointer disabled:opacity-50"
+  >
+    <Upload className="w-4 h-4" /> {importing ? 'Reading file...' : 'Import Questions'}
+  </button>
+  <button
+    type="button"
+    onClick={handleAddQuestion}
+    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-50 text-[#092517] hover:bg-emerald-100 text-xs font-bold transition cursor-pointer"
+  >
+    <Plus className="w-4 h-4" /> Add Question
+  </button>
+</div>
           </div>
 
           {questions.map((q, index) => (
@@ -314,14 +466,70 @@ export default function CreateExam({ onExamCreated }) {
           ))}
         </div>
 
-        <button 
-          type="submit"
-          className="w-full py-4 bg-[#092517] hover:bg-[#071d12] text-white font-bold text-sm rounded-2xl shadow-md transition flex items-center justify-center gap-2 cursor-pointer"
-        >
-          <span>Generate Exam Code & Link</span>
-          <ArrowRight className="w-4 h-4" />
-        </button>
+       <button 
+  type="submit"
+  disabled={saving}
+  className="w-full py-4 bg-[#092517] hover:bg-[#071d12] text-white font-bold text-sm rounded-2xl shadow-md transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+>
+  <span>{saving ? 'Creating exam...' : 'Generate Exam Code & Link'}</span>
+  <ArrowRight className="w-4 h-4" />
+</button>
       </form>
+      {preview && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4">
+    <div className="bg-white rounded-3xl border border-neutral-200 p-6 sm:p-8 max-w-lg w-full shadow-2xl space-y-4 max-h-[85vh] flex flex-col">
+      <div className="flex items-start justify-between">
+        <div>
+          <h3 className="text-xl font-black text-[#0D2418]">Import Preview</h3>
+          <p className="text-xs text-neutral-500 mt-1">
+            {preview.questions.length} valid, {preview.errors.length} with problems
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setPreview(null)}
+          className="p-2 rounded-full bg-neutral-100 hover:bg-neutral-200 text-neutral-600 transition cursor-pointer"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+
+      <div className="overflow-y-auto space-y-3 pr-1">
+        {preview.errors.length > 0 && (
+          <ul className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs space-y-1">
+            {preview.errors.map((er, i) => (
+              <li key={i}>Row {er.row}: {er.message}</li>
+            ))}
+          </ul>
+        )}
+
+        <ol className="list-decimal pl-5 text-sm text-neutral-700 space-y-1">
+          {preview.questions.map((q, i) => (
+            <li key={i}>{q.questionText}</li>
+          ))}
+        </ol>
+      </div>
+
+      <div className="flex gap-3 pt-2">
+        <button
+          type="button"
+          onClick={() => setPreview(null)}
+          className="flex-1 py-3 rounded-xl border border-neutral-200 text-sm font-semibold text-neutral-600 hover:bg-neutral-50 transition cursor-pointer"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={confirmImport}
+          disabled={preview.questions.length === 0}
+          className="flex-1 py-3 rounded-xl bg-[#092517] hover:bg-[#071d12] text-white text-sm font-bold transition cursor-pointer disabled:opacity-40"
+        >
+          Add {preview.questions.length} questions
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
       {/* ANIMATED OVERLAY MODAL */}
       {showModal && generatedExam && (
